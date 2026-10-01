@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: subtel-config
+data:
+  DATA_DIR: /data
+  WEB_WORKERS: "1"
+  PROCESSING_WORKERS: "2"
+  JOB_WORKERS: "1"
+  OCR_LANG: spa+eng
+  MAX_UPLOAD_MB: "200"
+  MAX_REQUEST_MB: "500"
+  MAX_FILES_PER_REQUEST: "200"
+  MAX_PAGES: "500"
+  MAX_QUEUE: "150"
+  MIN_FREE_DISK_MB: "500"
+  RETENTION_DAYS_ORIGINAL: "30"
+  RETENTION_DAYS_PROTECTED: "365"
+  BUCKET_ALLOWED_HOSTS: ""

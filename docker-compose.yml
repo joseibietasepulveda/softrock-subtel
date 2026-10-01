@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: subtel
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Configure POSTGRES_PASSWORD en .env}
+      POSTGRES_DB: subtel
+    ports: ["127.0.0.1:${POSTGRES_PORT:-5432}:5432"]
+    volumes:
+      - subtel_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U subtel -d subtel"]
+      interval: 2s
+      retries: 30
+    restart: unless-stopped
+  app:
+    build: .
+    ports: ["127.0.0.1:8000:8000"]
+    depends_on:
+      db: {condition: service_healthy}
+    environment:
+      DATABASE_URL: postgresql://subtel:${POSTGRES_PASSWORD:?Configure POSTGRES_PASSWORD}@db:5432/subtel
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Configure ADMIN_PASSWORD en .env}
+      REGULAR_PASSWORD: ${REGULAR_PASSWORD:-}
+      WEB_WORKERS: "1"
+      PROCESSING_WORKERS: "2"
+      JOB_WORKERS: "1"
+      BUCKET_ALLOWED_HOSTS: ${BUCKET_ALLOWED_HOSTS:-}
+      OIDC_ISSUER: ${OIDC_ISSUER:-}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
+      OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI:-}
+    volumes:
+      - subtel_data:/data
+    restart: unless-stopped
+volumes:
+  subtel_data:
+  subtel_pg:

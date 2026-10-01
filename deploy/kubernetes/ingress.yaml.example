@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: subtel
+spec:
+  ingressClassName: REEMPLAZAR_CLASE
+  tls:
+    - hosts: [proteccion.example.invalid]
+      secretName: subtel-tls
+  rules:
+    - host: proteccion.example.invalid
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: subtel
+                port:
+                  name: http

@@ -1,0 +1,60 @@
+name: Validación de la entrega
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validar:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: runner
+          POSTGRES_PASSWORD: ${{ github.run_id }}-${{ github.run_attempt }}-test-only
+          POSTGRES_DB: subtel_test
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U runner -d subtel_test"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      POSTGRES_PORT: "55432"
+      DATABASE_URL: postgresql://runner:${{ github.run_id }}-${{ github.run_attempt }}-test-only@127.0.0.1:5432/subtel_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Instalar herramientas y dependencias de pruebas
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr tesseract-ocr-spa tesseract-ocr-eng poppler-utils libreoffice-writer libreoffice-calc fonts-dejavu-core
+          python -m pip install -r requirements-dev.txt
+      - name: Pruebas del motor, API, integraciones y arranque
+        run: python -m pytest -q
+      - name: Configurar credenciales efímeras de la instalación de prueba
+        run: |
+          printf 'POSTGRES_PASSWORD=%s\n' "$(openssl rand -hex 24)" >> "$GITHUB_ENV"
+          printf 'ADMIN_PASSWORD=TestA9%s\n' "$(openssl rand -hex 24)" >> "$GITHUB_ENV"
+          printf 'SMOKE_STATE=%s\n' "$RUNNER_TEMP/subtel-smoke.json" >> "$GITHUB_ENV"
+      - name: Construir la imagen y arrancar desde una base vacía
+        run: |
+          docker compose config --quiet
+          docker compose build
+          docker compose up -d
+      - name: Comprobar procesamiento y persistencia
+        run: |
+          python tools/smoke_install.py --state "$SMOKE_STATE"
+          docker compose restart app
+          python tools/smoke_install.py --state "$SMOKE_STATE" --verify-restart
+      - name: Mostrar diagnóstico de contenedores ante un fallo
+        if: failure()
+        run: docker compose logs --tail=100
+      - name: Detener la instalación de prueba
+        if: always()
+        run: docker compose down -v

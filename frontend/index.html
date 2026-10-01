@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SelloDoc — SUBTEL</title>
+<link rel="stylesheet" href="/style.css?v=0.5.0-sellodoc">
+</head>
+<body>
+
+<div id="login" class="login hidden">
+  <form id="loginForm" class="login-card">
+    <div class="brand"><div><strong>SelloDoc</strong><small>Subsecretaría de Telecomunicaciones</small></div></div>
+    <label>Usuario <input name="username" autocomplete="username" required autofocus></label>
+    <label>Contraseña <input name="password" type="password" autocomplete="current-password" required></label>
+    <p id="loginError" class="error"></p>
+    <button class="btn primary" type="submit">Ingresar</button>
+    <a id="oidcLogin" class="btn ghost hidden" href="/api/auth/oidc/login">Ingresar con cuenta institucional</a>
+  </form>
+</div>
+
+<div id="shell" class="shell hidden">
+  <aside class="sidebar">
+    <div class="brand"><div><strong>SelloDoc</strong><small>SUBTEL · v0.6.0</small></div></div>
+    <nav id="nav">
+      <a href="#procesar" data-view="procesar"><svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>Procesamiento de documentos</span></a>
+      <a href="#lotes" data-view="lotes"><svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg><span>Lotes</span></a>
+      <a href="#aprobaciones" data-view="aprobaciones"><svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><span>Aprobaciones pendientes</span></a>
+      <a href="#bitacora" data-view="bitacora" data-roles="auditor,administrador"><svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="16" x2="13" y2="16"/></svg><span>Bitácora de auditoría</span></a>
+      <a href="#usuarios" data-view="usuarios" data-roles="administrador"><svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Usuarios y roles</span></a>
+      <a href="#politicas" data-view="politicas" data-roles="administrador"><svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg><span>Políticas por tipo documental</span></a>
+      <a href="#api" data-view="api" data-roles="administrador"><svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg><span>Integración API</span></a>
+      <a href="#cuenta" data-view="cuenta"><svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Mi cuenta</span></a>
+      <a href="#acerca" data-view="acerca"><svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg><span>Acerca de esta versión</span></a>
+    </nav>
+    <div class="user">
+      <span class="avatar" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+      <div><strong id="userName"></strong><small id="userRole"></small></div>
+      <button id="logout" class="btn ghost small">Salir</button>
+    </div>
+  </aside>
+
+  <main class="content">
+
+    <section id="view-procesar" class="view">
+      <h1>Procesamiento de documentos</h1>
+      <p class="lead">Arrastre uno o varios documentos (o un ZIP). La plataforma detecta los datos sensibles; usted <b>revisa los hallazgos</b> (aceptar, rechazar o agregar), elige el tratamiento y genera el documento protegido.</p>
+
+      <div id="dropzone" class="dropzone" tabindex="0">
+        <input id="fileInput" type="file" multiple accept=".pdf,.docx,.doc,.xlsx,.xls,.txt,.jpg,.jpeg,.png,.tif,.tiff,.zip" hidden>
+        <div class="dz-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+        <div><strong>Arrastre los documentos aquí</strong> o <button type="button" class="link" id="browse">seleccione desde su equipo</button></div>
+        <small>PDF y PDF/A (nativo o escaneado), DOCX, XLSX, TXT, JPG, PNG, TIFF, ZIP · DOC/XLS si el servidor tiene LibreOffice · máx. 200 MB</small>
+      </div>
+
+      <div class="toolbar">
+        <label class="inline">Tipo documental <select id="docType"></select></label>
+        <details id="entityDropdown" class="dropdown">
+          <summary class="btn"><span id="entitySummary">Datos sensibles a tachar</span> ▾</summary>
+          <div class="dropdown-menu" id="entityMenu">
+            <div class="dropdown-actions"><button type="button" class="link" id="selAll">Todos</button> · <button type="button" class="link" id="selNone">Ninguno</button> · <button type="button" class="link" id="selPolicy">Según política</button></div>
+          </div>
+        </details>
+        <input id="batchName" placeholder="Nombre del lote (opcional)">
+        <span class="spacer"></span>
+        <button id="clearFiles" class="btn ghost" disabled>Limpiar</button>
+        <button id="process" class="btn primary" disabled>Procesar</button>
+      </div>
+      <fieldset class="analysis-level" aria-describedby="analysisLevelHelp">
+        <legend>Nivel de análisis</legend>
+        <div class="analysis-level-options">
+          <label><input type="radio" name="analysisLevel" value="fast" checked> Rápido</label>
+          <label><input type="radio" name="analysisLevel" value="balanced"> Equilibrado</label>
+          <label><input type="radio" name="analysisLevel" value="exhaustive"> Exhaustivo</label>
+        </div>
+        <small id="analysisLevelHelp">Rápido prioriza tiempo; Equilibrado analiza páginas de mayor riesgo; Exhaustivo prioriza cobertura.</small>
+      </fieldset>
+      <p id="uploadMsg" class="hint"></p>
+
+      <table id="pendingTable" class="table hidden">
+        <thead><tr><th>Por subir</th><th>Tamaño</th></tr></thead><tbody></tbody>
+      </table>
+
+      <h2>Mis documentos</h2>
+      <table id="docsTable" class="table">
+        <thead><tr><th>Documento</th><th>Tipo</th><th>Estado</th><th>Hallazgos</th><th>Fecha</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section id="view-revision" class="view hidden">
+      <div class="toolbar">
+        <button id="backToDocs" class="btn ghost">← Volver</button>
+        <h1 id="revTitle" class="grow" style="margin:0"></h1>
+        <span id="revStatus" class="status"></span>
+      </div>
+      <div class="toolbar">
+        <div id="pageNav" class="hidden">
+          <button id="prevPage" class="btn small">‹</button>
+          <span id="pageLabel"></span>
+          <button id="nextPage" class="btn small">›</button>
+        </div>
+        <label class="inline manual-mode" id="manualWrap">Hallazgo manual: <strong id="manualTypeLabel"></strong>
+          <select id="manualType" class="hidden" aria-hidden="true"></select>
+          <small id="manualHint" class="hint"></small>
+        </label>
+        <span class="spacer"></span>
+        <label class="inline" id="treatmentWrap">Tratamiento
+          <select id="treatmentSelect" required>
+            <option value="">Seleccione…</option>
+            <option value="redact">Tachar (flujo actual)</option>
+            <option value="anonymize">Anonimizar</option>
+            <option value="pseudonymize">Seudonimizar</option>
+            <option value="mask_full">Enmascarar total</option>
+            <option value="mask_partial">Enmascarar parcial</option>
+          </select>
+          <small id="treatmentExample" class="hint"></small>
+        </label>
+        <button id="approveBtn" class="btn primary">Generar documento protegido</button>
+        <a id="downloadBtn" class="btn primary hidden" href="#">Descargar protegido</a>
+      </div>
+      <p class="hint">Haga clic sobre un recuadro o hallazgo para <b>aceptarlo/rechazarlo</b>. En documentos con páginas, dibuje un rectángulo para agregar un hallazgo manual; en documentos de texto, seleccione el texto.</p>
+      <div id="verifyReport" class="hidden card"></div>
+      <div id="approvalActions" class="approval-actions card hidden">
+        <div><strong>Decisión administrativa</strong><small>El documento ya fue trabajado y enviado por el usuario asignado.</small></div>
+        <span class="spacer"></span>
+        <a id="approvalDownload" class="btn ghost" href="#">Descargar</a>
+        <button id="approvalReturn" class="btn">Devolver a revisión</button>
+        <button id="approvalReject" class="btn danger">Rechazar</button>
+        <button id="approvalDelete" class="btn danger">Eliminar</button>
+        <button id="approvalApprove" class="btn primary">Aprobar</button>
+      </div>
+      <div class="review-grid">
+        <div id="viewer" class="viewer">
+          <div id="pageWrap" class="page-wrap hidden">
+            <img id="pageImg" draggable="false" alt="Página del documento">
+            <div id="overlay"></div>
+            <div id="pageError" class="page-error hidden">
+              <div class="page-error-box">
+                <p>No se pudo cargar la imagen de esta página.</p>
+                <button id="pageRetry" class="btn small" type="button">Reintentar</button>
+              </div>
+            </div>
+          </div>
+          <div id="textWrap" class="text-wrap hidden"></div>
+          <div id="pageNavBottom" class="page-nav-bottom hidden">
+            <button id="prevPageBottom" class="btn small">‹</button>
+            <span id="pageLabelBottom"></span>
+            <button id="nextPageBottom" class="btn small">›</button>
+          </div>
+        </div>
+        <aside class="findings-panel">
+          <h3>Hallazgos <span id="findingsCount"></span></h3>
+          <div id="findingsGroups"></div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="view-lotes" class="view hidden">
+      <h1>Lotes</h1>
+      <p class="lead">Cada carga múltiple o ZIP crea un lote. Desde aquí se descargan todos los protegidos en un ZIP y el reporte CSV.</p>
+      <table class="table"><thead><tr><th>Lote</th><th>Tipo</th><th>Creado por</th><th>Progreso</th><th>Fecha</th><th></th></tr></thead><tbody id="batchesBody"></tbody></table>
+    </section>
+
+    <section id="view-aprobaciones" class="view hidden">
+      <h1>Aprobaciones pendientes</h1>
+      <div id="approvalsDenied" class="permission-empty hidden">
+        <strong>No tienes los permisos para ver el contenido de esta sección</strong>
+      </div>
+      <div id="approvalsContent">
+        <p class="lead">Documentos trabajados por usuarios Regular y enviados a decisión administrativa.</p>
+        <table class="table"><thead><tr><th>Documento</th><th>Usuario</th><th>Tipo</th><th>Enviado (UTC-3)</th><th>Hallazgos</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="approvalsBody"></tbody></table>
+      </div>
+    </section>
+
+    <section id="view-bitacora" class="view hidden">
+      <h1>Bitácora de auditoría</h1>
+      <p class="lead">Registro inalterable (SHA-256 encadenado) de cada operación: ingresos, procesamientos, decisiones de revisión, cambios de usuarios, políticas y tokens.</p>
+      <div class="toolbar">
+        <input id="auditUser" placeholder="Usuario">
+        <select id="auditEvent">
+          <option value="">Todos los eventos</option>
+          <option>login</option><option>login_failed</option><option>logout</option>
+          <option>document_uploaded</option><option>processed</option><option>process_failed</option>
+          <option>finding_reviewed</option><option>finding_added</option><option>finding_deleted</option><option>approved</option>
+          <option>submitted_for_approval</option><option>approval_approved</option><option>approval_rejected</option><option>approval_returned</option><option>document_deleted</option>
+          <option>pending_approval</option><option>protected</option><option>protected_with_warnings</option><option>verification_warning_migrated</option><option>verification_failed</option><option>download</option>
+          <option>batch_created</option><option>policy_updated</option><option>document_type_created</option>
+          <option>user_created</option><option>user_updated</option><option>password_changed</option>
+          <option>token_created</option><option>token_revoked</option>
+        </select>
+        <button id="auditSearch" class="btn">Buscar</button>
+        <span class="spacer"></span>
+        <button id="auditVerify" class="btn ghost">Verificar cadena</button>
+        <a id="auditCsv" class="btn ghost" href="/api/audit?format=csv">Exportar CSV</a>
+      </div>
+      <p id="auditVerifyResult" class="hint"></p>
+      <table class="table"><thead><tr><th>Fecha (UTC-3)</th><th>Usuario</th><th>IP</th><th>Evento</th><th>Tratamiento</th><th>Nivel de análisis</th><th>Detalle</th></tr></thead><tbody id="auditBody"></tbody></table>
+    </section>
+
+    <section id="view-usuarios" class="view hidden">
+      <h1>Usuarios y roles</h1>
+      <p class="lead">Roles: <b>Regular</b> (carga, trabaja y envía a aprobación) · <b>operador</b> (carga y revisa sus documentos) · <b>revisor</b> (revisa todos) · <b>aprobador</b> (revisión avanzada) · <b>auditor</b> (solo lectura de bitácora) · <b>administrador</b> (todo). Con LDAP/AD habilitado, los usuarios del directorio ingresan directamente y su rol proviene del mapeo de grupos.</p>
+      <form id="userForm" class="inline-form">
+        <input name="username" placeholder="usuario" required pattern="[a-zA-Z0-9_]+">
+        <input name="display_name" placeholder="Nombre para mostrar">
+        <select name="role"><option value="regular">Regular</option><option>operador</option><option>revisor</option><option>aprobador</option><option>auditor</option><option>administrador</option></select>
+        <input name="password" type="password" placeholder="Contraseña (≥10, mayúscula, número)" required>
+        <button class="btn primary" type="submit">Crear usuario local</button>
+      </form>
+      <p id="userError" class="error"></p>
+      <table class="table"><thead><tr><th>Usuario</th><th>Nombre</th><th>Origen</th><th>Rol</th><th>Estado</th><th>Último ingreso</th><th></th></tr></thead><tbody id="usersBody"></tbody></table>
+    </section>
+
+    <section id="view-politicas" class="view hidden">
+      <h1>Políticas por tipo documental</h1>
+      <p class="lead">Define qué datos se tachan según el tipo de documento (fila <code>*</code> = valor por defecto). Ej.: en un contrato tachar RUT pero no fechas. La política se aplica al cargar; el usuario puede ajustar el desplegable en cada carga.</p>
+      <div class="toolbar">
+        <form id="typeForm" class="inline-form" style="margin:0">
+          <input name="code" placeholder="código (ej: carta)" required>
+          <input name="name" placeholder="Nombre (ej: Carta)" required>
+          <button class="btn" type="submit">Agregar tipo documental</button>
+        </form>
+        <span class="spacer"></span>
+        <button id="savePolicies" class="btn primary">Guardar políticas</button>
+      </div>
+      <p id="policyMsg" class="hint"></p>
+      <div class="scroll-x"><table class="table" id="policyTable"><thead></thead><tbody></tbody></table></div>
+    </section>
+
+    <section id="view-api" class="view hidden">
+      <h1>Integración API</h1>
+      <p class="lead">Los sistemas de SUBTEL pueden tachar documentos vía REST con un token <code>Bearer</code>. Documentación interactiva en <a href="/docs" target="_blank">/docs</a>.</p>
+      <pre class="code"># Tachado directo (sin revisión):
+curl -H "Authorization: Bearer stk_..." -F "file=@resolucion.pdf" \
+  -F "document_type=resolucion" -F "analysis_level=exhaustivo" -F "treatment=anonymize" \
+  -o resolucion_protegida.pdf http://SERVIDOR:8000/api/v1/redact
+
+# Las mismas opciones que la plataforma (código o nombre, con o sin tilde):
+#   analysis_level  fast | balanced | exhaustive   (rápido | equilibrado | exhaustivo)
+#   treatment       redact | anonymize | pseudonymize | mask_full | mask_partial
+#   document_type   aplica la política del tipo documental (GET /api/document-types)
+#   entities        opcional, reemplaza la política: NOMBRE,RUT,EMAIL (GET /api/v1/entity-types)
+# Los PDF protegidos se entregan como PDF/A-1b.
+
+# Masivo desde buckets (URL prefirmadas, sin revisión humana; ver README):
+curl -H "Authorization: Bearer stk_..." -H "Content-Type: application/json" \
+  -d '{"options": {"analysis_level": "equilibrado", "treatment": "anonimizar"},
+       "items": [{"source_url": "https://bucket/orig.pdf?firma", "target_url": "https://bucket/anon.pdf?firma"}]}' \
+  http://SERVIDOR:8000/api/v1/jobs          # → job_id; estado en GET /api/v1/jobs/{job_id}
+
+# Flujo con revisión: POST /api/v1/documents → GET .../findings → PATCH … → POST .../approve → GET .../protected</pre>
+      <form id="tokenForm" class="inline-form">
+        <input name="name" placeholder="Nombre del token (p. ej. gestor-documental)" required>
+        <button class="btn primary" type="submit">Crear token</button>
+      </form>
+      <p id="tokenNew" class="hint"></p>
+      <table class="table"><thead><tr><th>Nombre</th><th>Creado por</th><th>Creado</th><th>Último uso</th><th>Estado</th><th></th></tr></thead><tbody id="tokensBody"></tbody></table>
+    </section>
+
+    <section id="view-cuenta" class="view hidden">
+      <h1>Mi cuenta</h1>
+      <form id="pwForm" class="stack-form" autocomplete="off">
+        <label>Contraseña actual
+          <span class="pw-field"><input name="current" type="password" required autocomplete="current-password"></span>
+        </label>
+        <label>Repita la contraseña actual
+          <span class="pw-field"><input name="current_confirm" type="password" required autocomplete="current-password"></span>
+          <span class="field-error" data-error-for="current_confirm"></span>
+        </label>
+        <label>Nueva contraseña
+          <span class="pw-field"><input name="password" type="password" required autocomplete="new-password"></span>
+        </label>
+        <label>Repita la nueva contraseña
+          <span class="pw-field"><input name="password_confirm" type="password" required autocomplete="new-password"></span>
+          <span class="field-error" data-error-for="password_confirm"></span>
+        </label>
+        <div>
+          <p class="hint" style="margin:0 0 6px">La nueva contraseña debe cumplir:</p>
+          <ul id="pwRules" class="pw-rules">
+            <li data-rule="len">Al menos 10 caracteres</li>
+            <li data-rule="upper">Al menos una letra mayúscula</li>
+            <li data-rule="digit">Al menos un número</li>
+          </ul>
+        </div>
+        <button class="btn primary" type="submit">Cambiar contraseña</button>
+        <p id="pwMsg" class="hint"></p>
+      </form>
+    </section>
+
+    <section id="view-acerca" class="view hidden">
+      <h1>Acerca de esta versión (0.6.0)</h1>
+      <div class="cards">
+        <div class="card"><h3>Incluido</h3><ul>
+          <li>Carga individual, múltiple y ZIP; lotes con ZIP y reporte CSV</li>
+          <li>15 tipos de datos sensibles, incl. <b>firma manuscrita</b> (heurística)</li>
+          <li><b>Revisión humana</b> por hallazgo: aceptar, rechazar, agregar manual (rectángulo o selección de texto)</li>
+          <li>Flujo de <b>aprobación administrativa</b> para usuarios Regular</li>
+          <li><b>Políticas por tipo documental</b> (matriz editable)</li>
+          <li><b>Cinco tratamientos</b>: tachado, anonimización, seudonimización y enmascaramiento total o parcial</li>
+          <li><b>Verificador posterior</b>: revisa el resultado e informa las alertas antes de descargar</li>
+          <li>Autenticación <b>Keycloak</b>, <b>LDAP / Active Directory</b> y cuentas locales</li>
+          <li>Bitácora inalterable con tratamiento, API REST y protección en 11 formatos</li>
+          <li>PDF de entrada y salida en formato <b>PDF/A</b> (salida PDF/A-1b)</li>
+        </ul></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="/app.js?v=0.5.0-alertas-radios"></script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+{
+  "names": [
+    "Dionisio Andrés Campos Ejemplo",
+    "Juan Luis Rojas Ejemplo",
+    "Pablo Eugenio Ejemplos Rojas",
+    "Patricio Hernán Campos Prueba",
+    "Ricardo Ivan Campos Ejemplo",
+    "Salvador Rodrigo Campos Prueba",
+    "Alberto David Campos Ejemplo",
+    "Ejemplos",
+    "José Roberto Castell Rojas",
+    "José Castell Rojas",
+    "Alberto Campos Prueba"
+  ],
+  "reference_sequences": [
+    [
+      "jose",
+      "castell",
+      "rojas"
+    ],
+    [
+      "jose",
+      "castel",
+      "rojas"
+    ],
+    [
+      "jose",
+      "roberto",
+      "castell",
+      "rojas"
+    ],
+    [
+      "jose",
+      "roberto",
+      "castel",
+      "rojas"
+    ]
+  ],
+  "header_tokens": [
+    "jose",
+    "roberto",
+    "castell",
+    "rojas"
+  ],
+  "paragraph_rules": [
+    {
+      "tokens": [
+        "jose",
+        "castell",
+        "rojas"
+      ],
+      "field": "name"
+    },
+    {
+      "tokens": [
+        "jos!",
+        "castell",
+        "rojas"
+      ],
+      "field": "name",
+      "corrections": {
+        "0": "José"
+      }
+    },
+    {
+      "tokens": [
+        "alberto",
+        "campos",
+        "prueba"
+      ],
+      "field": "notary"
+    },
+    {
+      "tokens": [
+        "1",
+        "de",
+        "junio",
+        "de",
+        "2017"
+      ],
+      "field": "date_a"
+    },
+    {
+      "tokens": [
+        "10",
+        "de",
+        "octubre",
+        "de",
+        "2016"
+      ],
+      "field": "date_b"
+    },
+    {
+      "tokens": [
+        "calle",
+        "ejemplo",
+        "1234"
+      ],
+      "field": "address"
+    },
+    {
+      "tokens": [
+        "calle",
+        "ejemplo",
+        "n°",
+        "1234"
+      ],
+      "field": "address"
+    },
+    {
+      "tokens": [
+        "calle",
+        "ejemplo",
+        "nº",
+        "1234"
+      ],
+      "field": "address"
+    },
+    {
+      "tokens": [
+        "calle",
+        "ejemplo",
+        "n*",
+        "1234"
+      ],
+      "field": "address"
+    }
+  ],
+  "completion_groups": [
+    [
+      "name",
+      "address"
+    ],
+    [
+      "notary",
+      "date_a",
+      "date_b"
+    ]
+  ]
+}

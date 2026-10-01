@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: subtel-documentos
+spec:
+  accessModes: [ReadWriteOnce]
+  # Ajustar capacidad y storageClassName al almacenamiento de SUBTEL.
+  resources:
+    requests:
+      storage: 50Gi
