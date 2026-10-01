@@ -513,12 +513,14 @@ def detect_findings(extraction: dict, codes: list[str], workdir: Path | None = N
 
 
 _TITLE_WORDS = {"sr", "sra", "srta", "senor", "senora", "don", "dona", "ria"}
-_NAME_ROLE_WORDS = engine.WHITELIST | _TITLE_WORDS | {
+_NAME_CONNECTORS = {"de", "del", "la", "las", "los", "y", "san", "santa", "da", "di", "van", "von"}
+_NAME_ROLE_WORDS = engine.WHITELIST | engine.NAME_PROSE_BOUNDARIES | _TITLE_WORDS | {
     "abogado", "abogada", "profesional", "somete", "comunica", "rut", "cedula",
     "residencia", "oferente", "firma", "depto", "oficina", "piso", "bodega",
     "patente", "motor", "chasis", "modelo", "marca",
     "registros", "publicista", "periodista", "ingeniero", "ingeniera",
     "licenciado", "licenciada", "contacto", "formacion", "academica", "academico",
+    "concejal", "concejala",
 }
 
 
@@ -574,12 +576,23 @@ def _title_context_names(page: dict) -> list[dict]:
                     last_x = word[3]
                     continue
                 break
+            # El contexto del título admite apellidos desconocidos, pero una
+            # palabra corriente en minúsculas ya pertenece a la oración. Los
+            # nombres conocidos en minúsculas siguen admitiéndose como OCR.
+            letters = [ch for ch in word[0] if ch.isalpha()]
+            if (token not in _NAME_CONNECTORS and letters and not letters[0].isupper()
+                    and token not in engine.FIRST_NAMES and token not in engine.CHILEAN_SURNAMES):
+                break
             picked.append(word)
             last_x = word[3]
             if len(token) > 2 and re.search(r"[,;:]$", word[0]):
                 break
             if len(picked) == 6:
                 break
+        # «Pérez de la comuna» termina en Pérez; los conectores sin un
+        # apellido posterior no forman parte del nombre.
+        while picked and _norm_soft(picked[-1][0]).replace(" ", "") in {"de", "del", "la", "las", "los", "y"}:
+            picked.pop()
         if digit_break or len(picked) < 2 or _norm_soft(picked[0][0]).replace(" ", "") in _NAME_ROLE_WORDS:
             continue
         text = " ".join(w[0].strip(" ,.;:") for w in picked).strip()
@@ -693,6 +706,12 @@ def _extend_wrapped_names(page: dict, findings: list[dict]) -> None:
             last_word = max(last_words, key=lambda w: (w[2], w[1]))
             if last_word[0].rstrip().endswith((",", ";", ".", ":")):
                 continue  # el nombre ya terminó antes del salto de línea
+            # No saltar a la línea siguiente si la oración ya continúa a la
+            # derecha del nombre: un sustantivo alineado debajo no es apellido.
+            if any(engine._same_text_line(last_word, word)
+                   and 0 <= word[1] - last_word[3] <= height * 4
+                   and list(word[1:]) not in boxes for word in words):
+                continue
             # A surname at the start of a wrapped list may lie far to the left
             # of the first name. Require both consecutive extraction order and
             # an explicit list boundary after it, rather than joining columns.
@@ -727,7 +746,7 @@ def _extend_wrapped_names(page: dict, findings: list[dict]) -> None:
             token = _norm_soft(word[0]).replace(" ", "")
             horizontal_overlap = min(right, box[2]) - max(left, box[0])
             if (0 <= box[1] - bottom <= height * 0.65 and horizontal_overlap > 0
-                    and token not in _NAME_ROLE_WORDS and any(ch.isalpha() for ch in token)
+                    and any(ch.isalpha() for ch in token)
                     and not any(box == old for old in boxes)):
                 next_words.append(word)
         if not next_words:

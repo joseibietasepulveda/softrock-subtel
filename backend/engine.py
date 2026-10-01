@@ -116,6 +116,16 @@ subsecretaria subsecretario subsecretaría ministerio ministro ministra division
 """.split())
 WHITELIST.add("programa")
 
+# Límites habituales de la oración posterior a un tratamiento personal. Se usan
+# también con mayúsculas, donde la capitalización no distingue nombres de prosa.
+NAME_PROSE_BOUNDARIES = set("""
+destaca consulta confirma informa pregunta responde explica indica senala menciona
+solicita manifiesta expresa sostiene agrega precisa aclara comenta reitera plantea
+presenta propone advierte comunica felicita agradece interviene coincide gestiona
+tambien ademas quien quienes que se sobre ante para por con sin este esta estos
+estas existe una un
+""".split())
+
 _RUT_RE = re.compile(
     r"(?<![\d.])\d{1,2}(?:[^\S\r\n]*\.?[^\S\r\n]*\d{3}){2}"
     r"[^\S\r\n]*-?\s*[\dkK](?![\d])"
@@ -320,7 +330,7 @@ def _names(text: str) -> list[tuple[int, int]]:
                     and _strip(tokens[i + 1].group()) in FIRST_NAMES):
                 stop = i
                 break
-            if _strip(token.group()) in WHITELIST:
+            if _strip(token.group()) in WHITELIST | NAME_PROSE_BOUNDARIES:
                 stop = i
                 if i > 1 and _strip(tokens[i - 1].group()) in {"de", "del", "la", "las", "los", "y"}:
                     stop -= 1
@@ -331,7 +341,7 @@ def _names(text: str) -> list[tuple[int, int]]:
 
     for m in _NAME_TRIGGER_RE.finditer(text):
         span = trimmed(m.start(1), m.group(1), minimum=1)
-        if span and _strip(text[span[0]:span[1]]) not in WHITELIST:
+        if span and _strip(text[span[0]:span[1]]) not in WHITELIST | NAME_PROSE_BOUNDARIES:
             out.append(span)
     for m in _COURT_PARTY_RE.finditer(text):
         if _strip(m.group(1)) not in WHITELIST | _NON_PERSON_STARTS:
