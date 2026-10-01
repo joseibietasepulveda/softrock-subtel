@@ -70,7 +70,7 @@ romualdo ronald roxana sabrina samantha sean sharon shirley stephanie stephen
 steven tatiana thiago thierry timothy ursula vania vladimir wilfredo william
 willy winston yadira yanet yanina yasmin yenny yuri zoe
 """.split())
-# Incorporaciones observadas en la demanda de Puerto Ventanas.
+# Nombres de pila adicionales para ampliar la cobertura del vocabulario.
 FIRST_NAMES.update({"dionisio", "dinson", "jenson", "aaron", "leslie", "giovani",
                     "galvarino", "eladio", "mabel"})
 

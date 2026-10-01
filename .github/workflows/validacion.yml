@@ -34,8 +34,12 @@ jobs:
         run: python -m pip install httpx==0.28.1
       - name: Configurar credenciales efímeras de la instalación de prueba
         run: |
-          printf 'POSTGRES_PASSWORD=%s\n' "$(openssl rand -hex 24)" >> "$GITHUB_ENV"
-          printf 'ADMIN_PASSWORD=TestA9%s\n' "$(openssl rand -hex 24)" >> "$GITHUB_ENV"
+          test_db_password=$(openssl rand -hex 24)
+          test_admin_password="TestA9$(openssl rand -hex 24)"
+          printf '::add-mask::%s\n' "$test_db_password"
+          printf '::add-mask::%s\n' "$test_admin_password"
+          printf 'POSTGRES_PASSWORD=%s\n' "$test_db_password" >> "$GITHUB_ENV"
+          printf 'ADMIN_PASSWORD=%s\n' "$test_admin_password" >> "$GITHUB_ENV"
           printf 'SMOKE_STATE=%s\n' "$RUNNER_TEMP/subtel-smoke.json" >> "$GITHUB_ENV"
       - name: Construir la imagen y arrancar desde una base vacía
         run: |

@@ -77,6 +77,18 @@ def test_tratamiento_cumple_objetivo_en_cada_formato(fmt, treatment, tmp_path):
     workdir = tmp_path / "work"
     extraction = pipeline.extract(source, workdir)
     findings = pipeline.detect_findings(extraction, ["RUT"], workdir)
+    if len(findings) != 1 and extraction["kind"] == "paged":
+        import pytesseract
+        from PIL import Image
+        page = extraction["pages"][0]
+        with Image.open(workdir / page["image"]) as image:
+            alternatives = {
+                mode: pytesseract.image_to_string(
+                    image, lang=engine._ocr_language(), config=f"--psm {mode}")
+                for mode in (6, 11)
+            }
+        pytest.fail(f"{fmt}/{treatment}: hallazgos={findings}; "
+                    f"palabras={page['words']}; lecturas alternativas={alternatives}")
     assert len(findings) == 1, (fmt, treatment, findings)
 
     output = tmp_path / f"salida.{fmt}"
