@@ -30,13 +30,8 @@ jobs:
         with:
           python-version: '3.12'
           cache: pip
-      - name: Instalar herramientas y dependencias de pruebas
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y tesseract-ocr tesseract-ocr-spa tesseract-ocr-eng poppler-utils libreoffice-writer libreoffice-calc fonts-dejavu-core
-          python -m pip install -r requirements-dev.txt
-      - name: Pruebas del motor, API, integraciones y arranque
-        run: python -m pytest -q
+      - name: Instalar cliente de comprobación
+        run: python -m pip install httpx==0.28.1
       - name: Configurar credenciales efímeras de la instalación de prueba
         run: |
           printf 'POSTGRES_PASSWORD=%s\n' "$(openssl rand -hex 24)" >> "$GITHUB_ENV"
@@ -47,6 +42,14 @@ jobs:
           docker compose config --quiet
           docker compose build
           docker compose up -d
+      - name: Pruebas dentro de la imagen de entrega
+        run: |
+          image_id=$(docker compose images -q app)
+          docker run --rm --network host --user 0 \
+            -e DATABASE_URL -e PYTHONDONTWRITEBYTECODE=1 \
+            -v "$PWD:/workspace:ro" -w /workspace \
+            --entrypoint sh "$image_id" \
+            -c 'pip install --no-cache-dir -r requirements-dev.txt && python -m pytest -q -p no:cacheprovider'
       - name: Comprobar procesamiento y persistencia
         run: |
           python tools/smoke_install.py --state "$SMOKE_STATE"

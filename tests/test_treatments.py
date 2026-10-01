@@ -131,4 +131,3 @@ def test_ejemplos_y_consistencia_de_seudonimos():
 def test_enmascaramiento_parcial_nunca_deja_completo_un_valor_corto(value,expected):
     finding=pipeline._finding('NOMBRE',value)
     assert pipeline.replacement_for(finding,'mask_partial')==expected
-

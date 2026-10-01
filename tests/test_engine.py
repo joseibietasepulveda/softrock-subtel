@@ -332,5 +332,3 @@ def test_nombres_en_instituciones_y_marcas_son_detecciones_validas():
     assert 'Diego Portales' in detected
     assert any('Gabriela Mistral' in value for value in detected)
     assert 'Mateo' in detected
-
-
