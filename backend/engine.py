@@ -122,7 +122,7 @@ _RUT_RE = re.compile(
 )
 _EMAIL_RE = re.compile(r"[\w.%+-]{1,64}@[A-Za-z0-9.-]{1,255}\.[A-Za-z]{2,24}", re.UNICODE)
 # Hueco que meten pdfplumber y Tesseract al trocear la página en palabras: la dirección
-# llega partida ("soporte@softrock. cl") o cortada por el salto de línea de la celda, y
+# llega partida ("soporte@example. test") o cortada por el salto de línea de la celda, y
 # el patrón estricto —que no admite separadores— deja de verla.
 _HUECO = r"[^\S\r\n]{0,2}(?:\n[^\S\r\n]{0,2})?"
 _ARROBA = (r"(?:@|[\(\[]" + _HUECO + r"(?:arroba|at)" + _HUECO + r"[\)\]]|arroba|"
@@ -470,12 +470,29 @@ def _ocr_language() -> str | None:
 
 
 def _ocr_words(img) -> list[tuple[str, int, int, int, int]]:
+    from math import ceil, floor
+    from statistics import median
+
     import pytesseract
     kwargs = {"output_type": pytesseract.Output.DICT}
     lang = _ocr_language()
     if lang:
         kwargs["lang"] = lang
     d = pytesseract.image_to_data(img, **kwargs)
+    scale_x = scale_y = 1.0
+    heights = [d["height"][i] for i, text in enumerate(d["text"])
+               if text.strip() and d["height"][i] > 0]
+    # Los caracteres sobredimensionados pueden confundirse incluso con buena
+    # resolución. Normalizar sólo la lectura: la imagen original no cambia.
+    if heights and median(heights) > 80:
+        from PIL import Image
+        factor = 48 / median(heights)
+        size = (max(1, round(img.width * factor)), max(1, round(img.height * factor)))
+        with img.resize(size, Image.Resampling.LANCZOS) as normalized:
+            reread = pytesseract.image_to_data(normalized, **kwargs)
+        if any(text.strip() for text in reread["text"]):
+            d = reread
+            scale_x, scale_y = img.width / size[0], img.height / size[1]
     words = []
     for i, t in enumerate(d["text"]):
         t = t.strip()
@@ -484,7 +501,10 @@ def _ocr_words(img) -> list[tuple[str, int, int, int, int]]:
         # Tesseract suele leer '@' como '(W', '(a)', '(Q'. Corrección mínima para no perder correos.
         t = _OCR_AT_RE.sub("@", t)
         x, y, w, h = d["left"][i], d["top"][i], d["width"][i], d["height"][i]
-        words.append((t, x, y, x + w, y + h))
+        # Redondear hacia fuera conserva la cobertura al volver a los píxeles
+        # originales, que son los utilizados por la revisión y la protección.
+        words.append((t, floor(x * scale_x), floor(y * scale_y),
+                      ceil((x + w) * scale_x), ceil((y + h) * scale_y)))
     return words
 
 

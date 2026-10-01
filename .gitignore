@@ -22,6 +22,7 @@ output/
 outputs/
 private/
 secrets/
+reglas-deteccion.json
 *.secret.yaml
 *.secret.yml
 tests/corpus_subtel/

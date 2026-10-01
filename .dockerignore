@@ -7,3 +7,7 @@
 !frontend/**
 **/__pycache__/
 **/*.pyc
+**/reglas-deteccion.json
+**/.env*
+**/*.key
+**/*.pem

@@ -52,7 +52,7 @@ env -u MIGRATE_SQLITE_PATH -u EXPLICIT_RULES_FILE .venv/bin/python -m pytest -q
 
 Instalar además Tesseract, Poppler y LibreOffice como en el Dockerfile. `tests/conftest.py` configura credenciales exclusivamente para las pruebas; no son valores predeterminados de la aplicación.
 
-La automatización de GitHub ejecuta las pruebas en Linux con PostgreSQL y construye una imagen Docker. También arranca una instalación vacía para comprobar salud, login, protección de un TXT, flujo de revisión y persistencia después de un reinicio. Las pruebas OIDC y de buckets simulan los servicios externos; la validación contra los servicios institucionales se realiza en DEV.
+La automatización de GitHub construye la imagen Docker y ejecuta dentro de ella las pruebas con PostgreSQL, incluyendo los cinco tratamientos en los once formatos soportados. También arranca una instalación vacía para comprobar salud, login, protección de un TXT, flujo de revisión y persistencia después de un reinicio. Las pruebas OIDC y de buckets simulan los servicios externos; la validación contra los servicios institucionales se realiza en DEV.
 
 ## Carga y capacidad
 

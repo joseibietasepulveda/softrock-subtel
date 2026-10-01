@@ -7,7 +7,7 @@ from backend import engine  # noqa: E402
 
 ALL = list(engine.ENTITY_TYPES)
 TXT = ("Solicitud de don Juan Pérez González, RUT 12.345.678-5, domicilio Av. Providencia 1234, Depto 56, Providencia, "
-       "correo jperez@gmail.com, teléfono +56 9 8765 4321, nacido el 04/05/1980, patente BCDF-12, IP 10.0.0.7, "
+       "correo jperez@example.test, teléfono +56 9 8765 4321, nacido el 04/05/1980, patente BCDF-12, IP 10.0.0.7, "
        "pasaporte N° AB123456, cuenta corriente N° 12345678901, folio 2026-001234, tarjeta 4111 1111 1111 1111, "
        "www.subtel.gob.cl. La Subsecretaría de Telecomunicaciones y el Ministerio de Hacienda resuelven.")
 
@@ -19,7 +19,7 @@ def _codes(text, codes=ALL):
 def test_detecta_todos_los_tipos():
     found = _codes(TXT)
     assert found["RUT"] == "12.345.678-5"
-    assert found["EMAIL"] == "jperez@gmail.com"
+    assert found["EMAIL"] == "jperez@example.test"
     assert found["TELEFONO"] == "+56 9 8765 4321"
     assert found["FECHA_NACIMIENTO"] == "04/05/1980"
     assert found["PATENTE"] == "BCDF-12"
@@ -95,7 +95,7 @@ def _pdf_with_text(path: Path, text: str):
 def test_pdf_nativo_queda_sin_texto_ni_metadatos(tmp_path):
     import pdfplumber
     src, dst = tmp_path / "in.pdf", tmp_path / "out.pdf"
-    _pdf_with_text(src, "Contacto: jperez@gmail.com RUT 12.345.678-5")
+    _pdf_with_text(src, "Contacto: jperez@example.test RUT 12.345.678-5")
     stats = engine.redact_file(src, dst, ALL)
     assert stats["EMAIL"] == 1 and stats["RUT"] == 1 and stats["pages"] == 1
     with pdfplumber.open(dst) as pdf:
@@ -132,28 +132,62 @@ def test_imagen_con_ocr(tmp_path):
     assert sum(1 for p in out.getdata() if p == 0) > 2000   # hay un bloque negro
 
 
+def test_ocr_letras_grandes_conserva_coordenadas_originales(monkeypatch):
+    from PIL import Image
+    import pytesseract
+
+    calls = []
+    def read(image, **kwargs):
+        calls.append(image.size)
+        if len(calls) == 1:
+            return {"text": ["12.345.0/8-5"], "left": [20], "top": [100],
+                    "width": [500], "height": [160]}
+        return {"text": ["12.345.678-5"], "left": [6], "top": [30],
+                "width": [150], "height": [48]}
+    monkeypatch.setattr(pytesseract, "image_to_data", read)
+    with Image.new("RGB", (1000, 500), "white") as image:
+        words = engine._ocr_words(image)
+    assert calls == [(1000, 500), (300, 150)]
+    assert words == [("12.345.678-5", 20, 100, 520, 260)]
+
+
+def test_ocr_texto_normal_no_repite_lectura(monkeypatch):
+    from PIL import Image
+    import pytesseract
+
+    calls = []
+    def read(image, **kwargs):
+        calls.append(image.size)
+        return {"text": ["12.345.678-5"], "left": [20], "top": [30],
+                "width": [100], "height": [20]}
+    monkeypatch.setattr(pytesseract, "image_to_data", read)
+    with Image.new("RGB", (1000, 500), "white") as image:
+        assert engine._ocr_words(image) == [("12.345.678-5", 20, 30, 120, 50)]
+    assert len(calls) == 1
+
+
 def test_correo_partido_por_el_troceo_en_palabras():
     """pdfplumber y Tesseract cortan la dirección al separar la página en palabras.
-    Cada variante es un caso visto en documentos reales del anexo SUBTEL."""
+    Las variantes reproducen separaciones habituales usando direcciones ficticias."""
     variantes = [
-        "soporte@softrock. cl",     # pdfplumber separó el TLD
-        "soporte @softrock.cl",     # separó la arroba
-        "soporte@\nsoftrock.cl",    # la celda cortó la línea después de la arroba
-        "soporte@softrock\n.cl",    # y aquí antes del punto
-        "soporte arroba softrock.cl",
-        "soporte (at) softrock.cl",
-        "soporte\uff20softrock.cl",  # arroba de ancho completo
+        "soporte@example. test",     # pdfplumber separó el TLD
+        "soporte @example.test",     # separó la arroba
+        "soporte@\nexample.test",    # la celda cortó la línea después de la arroba
+        "soporte@example\n.test",    # y aquí antes del punto
+        "soporte arroba example.test",
+        "soporte (at) example.test",
+        "soporte\uff20example.test",  # arroba de ancho completo
     ]
     for correo in variantes:
-        texto = f"Canal de reporte de incidentes: {correo} / +56 9 7808 3444."
+        texto = f"Canal de reporte de incidentes: {correo} / +56 9 1234 5678."
         found = _codes(texto, ["EMAIL"])
         assert found.get("EMAIL") == correo, correo
 
 
 def test_correo_bien_formado_no_arrastra_el_texto_vecino():
     """La pasada tolerante solo entra donde la estricta no encontró nada."""
-    assert _codes("Punto 3 .\ncontacto@softrock.cl fin", ["EMAIL"]) == {"EMAIL": "contacto@softrock.cl"}
-    assert _codes("Enviar a\ncontacto@softrock.cl", ["EMAIL"]) == {"EMAIL": "contacto@softrock.cl"}
+    assert _codes("Punto 3 .\ncontacto@example.test fin", ["EMAIL"]) == {"EMAIL": "contacto@example.test"}
+    assert _codes("Enviar a\ncontacto@example.test", ["EMAIL"]) == {"EMAIL": "contacto@example.test"}
     assert _codes("Nos juntamos at google.com el lunes", ["EMAIL"]) == {}
     assert _codes("Ver el anexo 2. Correo institucional del servicio.", ["EMAIL"]) == {}
 
@@ -175,11 +209,11 @@ def test_url_partida_por_salto_de_linea():
     """Un CV de diseño parte la URL al ancho de la columna: la primera línea termina en
     `/` y el usuario queda en la siguiente. La continuación solo entra tras un carácter
     explícito de continuación; una URL que termina limpia no arrastra la línea siguiente."""
-    t = "Portafolio: https://www.behance.net/\nvalentifuentes28 y más"
-    assert _codes(t, ["WEB_REDES"]) == {"WEB_REDES": "https://www.behance.net/\nvalentifuentes28"}
+    t = "Portafolio: https://portfolio.example.test/\npersona_ficticia y más"
+    assert _codes(t, ["WEB_REDES"]) == {"WEB_REDES": "https://portfolio.example.test/\npersona_ficticia"}
     assert _codes("Visite www.subtel.cl\nSantiago, marzo", ["WEB_REDES"]) == {"WEB_REDES": "www.subtel.cl"}
-    assert _codes("Ver https://mp.cl/oferta?id=\n8841 antes del cierre", ["WEB_REDES"]) == \
-        {"WEB_REDES": "https://mp.cl/oferta?id=\n8841"}
+    assert _codes("Ver https://ofertas.example.test/oferta?id=\n8841 antes del cierre", ["WEB_REDES"]) == \
+        {"WEB_REDES": "https://ofertas.example.test/oferta?id=\n8841"}
 
 
 def test_rangos_de_anios_no_son_telefonos():
@@ -189,15 +223,15 @@ def test_rangos_de_anios_no_son_telefonos():
     assert _codes("EXPERIENCIA\n2023\n2013 Diseñadora", ["TELEFONO"]) == {}
     assert _codes("Período 2022 2018 en la empresa", ["TELEFONO"]) == {}
     # los teléfonos legítimos siguen saliendo
-    assert "TELEFONO" in _codes("Llamar al +56 9 7363 2167", ["TELEFONO"])
-    assert "TELEFONO" in _codes("Fono (2) 2421 4000", ["TELEFONO"])
-    assert "TELEFONO" in _codes("anexo 32 2451 8899", ["TELEFONO"])
+    assert "TELEFONO" in _codes("Llamar al +56 9 1234 5678", ["TELEFONO"])
+    assert "TELEFONO" in _codes("Fono (2) 2123 4567", ["TELEFONO"])
+    assert "TELEFONO" in _codes("anexo 32 2345 6789", ["TELEFONO"])
 
 
 def test_rut_partido_y_solo_persona_natural():
-    assert _codes("Cédula 18.503.185-\n3", ["RUT"]) == {"RUT": "18.503.185-\n3"}
-    assert _codes("RUT 8 838 348-6", ["RUT"]) == {"RUT": "8 838 348-6"}
-    assert _codes("Proveedor RUT 76.608.455-9", ["RUT"]) == {}
+    assert _codes("Cédula 11.111.111-\n1", ["RUT"]) == {"RUT": "11.111.111-\n1"}
+    assert _codes("RUT 12 345 678-5", ["RUT"]) == {"RUT": "12 345 678-5"}
+    assert _codes("Proveedor RUT 76.543.210-3", ["RUT"]) == {}
 
 
 def test_fecha_no_es_patente_y_patentes_con_punto():
@@ -212,19 +246,19 @@ def test_fecha_no_es_patente_y_patentes_con_punto():
 
 
 def test_roles_judiciales_completos_no_son_telefonos():
-    text = ("Causa Rol C-6026-2017; Causa Rol C-3816-2017; "
-            "Causa Rol C-2861-2018; Causa Rol C-3995-2018")
+    text = ("Causa Rol C-1234-2020; Causa Rol C-1235-2020; "
+            "Causa Rol C-1236-2021; Causa Rol C-1237-2021")
     found = [(s.code, text[s.start:s.end]) for s in engine.detect(text, ["FOLIO", "TELEFONO"])]
     assert found == [
-        ("FOLIO", "C-6026-2017"), ("FOLIO", "C-3816-2017"),
-        ("FOLIO", "C-2861-2018"), ("FOLIO", "C-3995-2018"),
+        ("FOLIO", "C-1234-2020"), ("FOLIO", "C-1235-2020"),
+        ("FOLIO", "C-1236-2021"), ("FOLIO", "C-1237-2021"),
     ]
 
 
 def test_nombres_en_mayusculas_dentro_de_encabezados():
-    text = "DEPARTAMENTO MIGUEL ARAVENA ANGULO DE SALUD\nPABLINA RODRIGUEZ VARGAS\nYANET HERNANDEZ VELASQUEZ"
+    text = "DEPARTAMENTO MIGUEL PRUEBA EJEMPLO DE SALUD\nPABLINA EJEMPLO PRUEBA\nYANET PRUEBA EJEMPLO"
     names = [text[s.start:s.end] for s in engine.detect(text, ["NOMBRE"])]
-    assert names == ["MIGUEL ARAVENA ANGULO", "PABLINA RODRIGUEZ VARGAS", "YANET HERNANDEZ VELASQUEZ"]
+    assert names == ["MIGUEL PRUEBA EJEMPLO", "PABLINA EJEMPLO PRUEBA", "YANET PRUEBA EJEMPLO"]
 
 
 def _pagina(w=1600, h=900):
@@ -239,7 +273,7 @@ def test_firma_sin_texto_de_anclaje():
     from PIL import ImageDraw
     img = _pagina()
     d = ImageDraw.Draw(img)
-    for i in range(0, 720, 30):  # trazos curvos delgados (densidad ~9%, la firma real de referencia mide 4%)
+    for i in range(0, 720, 30):  # trazos curvos delgados (densidad ~9%, la variante de trazo fino mide 4%)
         d.arc((200 + i // 3, 300, 700 + i, 620), start=i % 360, end=(i + 140) % 360, fill=(20, 40, 160), width=4)
     boxes = engine._signature_boxes(img, [])
     assert len(boxes) == 1, boxes
@@ -264,14 +298,14 @@ def test_firma_fallback_no_dispara_con_texto_ni_fotos():
 
 def test_nombres_ampliados_y_cargos_judiciales():
     cases = {
-        "profesor Jean Pierre Matus, autor": "Jean Pierre Matus",
-        "JEAN PIERRE MATUS ACUÑA MINISTRO": "JEAN PIERRE MATUS ACUÑA",
-        "LEOPOLDO ANDRES LLANOS SAGRISTA": "LEOPOLDO ANDRES LLANOS SAGRISTA",
-        "ADELITA INES RAVANALES ARRIAGADA": "ADELITA INES RAVANALES ARRIAGADA",
-        "Leopoldo Andrés Llanos S.": "Leopoldo Andrés Llanos",
-        "Adelita Inés Ravanales A.": "Adelita Inés Ravanales",
-        "Jean Pierre Matus A.": "Jean Pierre Matus",
-        "Abogado Integrante Carlos Antonio Urquieta S.": "Carlos Antonio Urquieta",
+        "profesor Jean Pierre Prueba, autor": "Jean Pierre Prueba",
+        "JEAN PIERRE PRUEBA EJEMPLO MINISTRO": "JEAN PIERRE PRUEBA EJEMPLO",
+        "LEOPOLDO ANDRES PRUEBA EJEMPLO": "LEOPOLDO ANDRES PRUEBA EJEMPLO",
+        "ADELITA INES EJEMPLO PRUEBA": "ADELITA INES EJEMPLO PRUEBA",
+        "Leopoldo Andrés Prueba E.": "Leopoldo Andrés Prueba",
+        "Adelita Inés Ejemplo P.": "Adelita Inés Ejemplo",
+        "Jean Pierre Prueba E.": "Jean Pierre Prueba",
+        "Abogado Integrante Carlos Antonio Prueba E.": "Carlos Antonio Prueba",
         "Michelle Dupont": "Michelle Dupont",
         "William Smith": "William Smith",
         "Nathalie Soto": "Nathalie Soto",
@@ -284,12 +318,12 @@ def test_nombres_ampliados_y_cargos_judiciales():
 
 def test_lista_de_personas_no_pierde_el_ultimo_apellido():
     for text, expected in [
-        ("Rodrigo Flores Ortiz, Rene Valencia Uribe y Diego Vergara Arriagada, con fecha",
-         ["Rodrigo Flores Ortiz", "Rene Valencia Uribe", "Diego Vergara Arriagada"]),
-        ("Sr. Rene Valencia Uribe y Diego Vergara Arriagada",
-         ["Rene Valencia Uribe", "Diego Vergara Arriagada"]),
-        ("RENE VALENCIA URIBE Y DIEGO VERGARA ARRIAGADA",
-         ["RENE VALENCIA URIBE", "DIEGO VERGARA ARRIAGADA"]),
+        ("Rodrigo Prueba Ejemplo, Rene Ejemplo Prueba y Diego Prueba Ejemplo, con fecha",
+         ["Rodrigo Prueba Ejemplo", "Rene Ejemplo Prueba", "Diego Prueba Ejemplo"]),
+        ("Sr. Rene Ejemplo Prueba y Diego Prueba Ejemplo",
+         ["Rene Ejemplo Prueba", "Diego Prueba Ejemplo"]),
+        ("RENE EJEMPLO PRUEBA Y DIEGO PRUEBA EJEMPLO",
+         ["RENE EJEMPLO PRUEBA", "DIEGO PRUEBA EJEMPLO"]),
         ("María Pérez y Juan Arriagada", ["María Pérez", "Juan Arriagada"]),
         ("José Ortega y Gasset", ["José Ortega y Gasset"]),
         ("María Pérez y Soto", ["María Pérez y Soto"]),

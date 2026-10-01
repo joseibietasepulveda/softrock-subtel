@@ -105,34 +105,34 @@ def test_nombre_no_se_extiende_al_cargo_de_registros():
 
 
 def test_apellido_partido_y_nombre_poco_comun_antes_de_jueza():
-    words = [['Resolvió,', 10, 100, 110, 130], ['Sylke', 120, 100, 190, 130],
+    words = [['Resolvió,', 10, 100, 110, 130], ['Zylka', 120, 100, 190, 130],
              ['M', 200, 100, 225, 130], ['ó', 100, 100, 108, 130],
-             ['üller', 225, 100, 290, 130], ['Valdés,', 300, 100, 385, 130],
+             ['üller', 225, 100, 290, 130], ['Ejemplo,', 300, 100, 385, 130],
              ['Jueza', 395, 100, 450, 130], ['Titular', 460, 100, 540, 130]]
     page = {'n': 1, 'width': 1000, 'height': 2000, 'words': words}
     findings = pipeline._detect_page_text_findings(page, words, ['NOMBRE'])
-    assert any(f['text'] == 'Sylke Müller Valdés' for f in findings)
+    assert any(f['text'] == 'Zylka Müller Ejemplo' for f in findings)
     assert all(words[3][1:] not in f['boxes'] for f in findings)
 
 
 def test_apellido_al_principio_de_linea_en_lista_de_abogados():
-    words = [['Benjamín', 700, 100, 810, 130], ['Mordoj', 825, 100, 940, 130],
-             ['Hutter', 100, 140, 180, 170], ['y', 190, 140, 200, 170],
+    words = [['Benjamín', 700, 100, 810, 130], ['Ficticio', 825, 100, 940, 130],
+             ['Prueba', 100, 140, 180, 170], ['y', 190, 140, 200, 170],
              ['Sergio', 210, 140, 280, 170], ['Soto', 290, 140, 350, 170]]
     page = {'n': 1, 'width': 1000, 'height': 2000, 'words': words}
-    finding = pipeline._finding('NOMBRE', 'Benjamín Mordoj', page=1, boxes=[w[1:] for w in words[:2]])
+    finding = pipeline._finding('NOMBRE', 'Benjamín Ficticio', page=1, boxes=[w[1:] for w in words[:2]])
     pipeline._extend_wrapped_names(page, [finding])
-    assert finding['text'] == 'Benjamín Mordoj\nHutter'
+    assert finding['text'] == 'Benjamín Ficticio\nPrueba'
     assert finding['boxes'] == [w[1:] for w in words[:3]]
 
 
 def test_caja_del_titulo_solapada_no_omite_primer_nombre():
     words = [['SR.', 10, 100, 50, 130], ['JOSE', 45, 100, 115, 130],
-             ['MIGUEL', 120, 100, 220, 130], ['ARAVENA', 225, 100, 340, 130],
-             ['ANGULO', 345, 100, 450, 130]]
+             ['MIGUEL', 120, 100, 220, 130], ['PRUEBA', 225, 100, 340, 130],
+             ['EJEMPLO', 345, 100, 450, 130]]
     page = {'n': 1, 'width': 1000, 'height': 2000, 'words': words}
     candidates = pipeline._title_context_names(page)
-    assert any(f['text'] == 'JOSE MIGUEL ARAVENA ANGULO' for f in candidates)
+    assert any(f['text'] == 'JOSE MIGUEL PRUEBA EJEMPLO' for f in candidates)
     assert all(words[0][1:] not in f['boxes'] for f in candidates)
 
 
@@ -253,12 +253,12 @@ def test_imagen_de_pagina_atomica_y_regenerable(tmp_path):
 def test_ocr_complementario_agrega_solo_palabras_ausentes(monkeypatch):
     from PIL import Image
 
-    native = [["JOSE", 100, 500, 170, 530], ["ANGULO", 300, 500, 390, 530]]
+    native = [["JOSE", 100, 500, 170, 530], ["EJEMPLO", 300, 500, 390, 530]]
     monkeypatch.setattr(pipeline, "_ocr_words", lambda _img: [])
     monkeypatch.setattr(pipeline, "_sparse_ocr_words", lambda _img: [
         ("JOSE", 100, 220, 170, 250),
         ("MIGUEL", 180, 220, 275, 250),
-        ("ANGULO", 300, 220, 390, 250),
+        ("EJEMPLO", 300, 220, 390, 250),
         ("PABLINA", 100, 320, 200, 350),
     ])
     img = Image.new("RGB", (600, 1000), "white")
@@ -312,18 +312,18 @@ def test_propagacion_nombre_tolera_primer_nombre_abreviado_por_ocr():
         "n": 1, "image": "pages/p1.png", "width": 800, "height": 300,
         "words": [],
         "verification_words": [
-            ["MIG", 100, 100, 140, 125], ["ARAVENA", 155, 100, 250, 125],
-            ["ANGULO", 265, 100, 350, 125],
+            ["MIG", 100, 100, 140, 125], ["PRUEBA", 155, 100, 250, 125],
+            ["EJEMPLO", 265, 100, 350, 125],
         ],
     }], "ocr_pages": []}
     seed = [
-        {"entity_code": "NOMBRE", "text": "MIGUEL ARAVENA ANGULO",
+        {"entity_code": "NOMBRE", "text": "MIGUEL PRUEBA EJEMPLO",
          "page": 2, "boxes": [[1, 1, 2, 2]]},
-        {"entity_code": "NOMBRE", "text": "MIGUEL ARAVENA ANGULO",
+        {"entity_code": "NOMBRE", "text": "MIGUEL PRUEBA EJEMPLO",
          "page": 3, "boxes": [[1, 1, 2, 2]]},
     ]
     extra = pipeline._propagate_fuzzy_three_part_names(seed, extraction)
-    assert [finding["text"] for finding in extra] == ["MIG ARAVENA ANGULO"]
+    assert [finding["text"] for finding in extra] == ["MIG PRUEBA EJEMPLO"]
 
 
 def test_titulo_ocr_no_convierte_una_palabra_institucional_en_nombre():
@@ -449,36 +449,36 @@ def _rels_xml(path) -> str:
 def test_docx_no_deja_el_correo_en_el_destino_del_hipervinculo(tmp_path):
     """El texto tachado se ve bien, pero el `mailto:` vive en los .rels: abrir el .docx
     como ZIP lo dejaba a la vista aunque el documento se viera limpio."""
-    src = _docx_con_hipervinculo(tmp_path / "c.docx", "soporte@softrock.cl",
-                                 "mailto:soporte@softrock.cl")
-    assert "soporte@softrock.cl" in _rels_xml(src)      # el original sí lo trae
+    src = _docx_con_hipervinculo(tmp_path / "c.docx", "soporte@example.test",
+                                 "mailto:soporte@example.test")
+    assert "soporte@example.test" in _rels_xml(src)      # el original sí lo trae
 
     ext = pipeline.extract(src, tmp_path / "wd")
     fs = pipeline.detect_findings(ext, ALL)
     assert any(f["entity_code"] == "EMAIL" for f in fs)
     out = tmp_path / "c_out.docx"
     pipeline.apply_findings(src, ext, fs, tmp_path / "wd", out, codes=ALL)
-    assert "soporte@softrock.cl" not in _rels_xml(out)
+    assert "soporte@example.test" not in _rels_xml(out)
 
     import docx
-    assert "soporte@softrock.cl" not in "\n".join(p.text for p in docx.Document(str(out)).paragraphs)
+    assert "soporte@example.test" not in "\n".join(p.text for p in docx.Document(str(out)).paragraphs)
 
 
 def test_docx_conserva_el_enlace_si_no_se_pidio_tachar_correos(tmp_path):
-    src = _docx_con_hipervinculo(tmp_path / "d.docx", "soporte@softrock.cl",
-                                 "mailto:soporte@softrock.cl")
+    src = _docx_con_hipervinculo(tmp_path / "d.docx", "soporte@example.test",
+                                 "mailto:soporte@example.test")
     ext = pipeline.extract(src, tmp_path / "wd")
     fs = pipeline.detect_findings(ext, ["RUT"])
     out = tmp_path / "d_out.docx"
     pipeline.apply_findings(src, ext, fs, tmp_path / "wd", out, codes=["RUT"])
-    assert "soporte@softrock.cl" in _rels_xml(out)
+    assert "soporte@example.test" in _rels_xml(out)
 
 
 def test_docx_elimina_mailto_para_correo_agregado_manual(tmp_path):
-    src = _docx_con_hipervinculo(tmp_path / "manual.docx", "soporte@softrock.cl",
-                                 "mailto:soporte@softrock.cl")
+    src = _docx_con_hipervinculo(tmp_path / "manual.docx", "soporte@example.test",
+                                 "mailto:soporte@example.test")
     ext = pipeline.extract(src, tmp_path / "wd")
-    manual = {"entity_code": "EMAIL", "text": "soporte@softrock.cl", "status": "accepted"}
+    manual = {"entity_code": "EMAIL", "text": "soporte@example.test", "status": "accepted"}
     out = tmp_path / "manual_out.docx"
     pipeline.apply_findings(src, ext, [manual], tmp_path / "wd", out, codes=["RUT"])
-    assert "soporte@softrock.cl" not in _rels_xml(out)
+    assert "soporte@example.test" not in _rels_xml(out)
