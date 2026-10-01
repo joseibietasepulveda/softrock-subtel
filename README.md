@@ -12,6 +12,7 @@ Aplicación para detectar, revisar y proteger datos personales en documentos, de
 | Integrar buckets, API y Keycloak | [Integraciones](docs/INTEGRACIONES.md) |
 | Validar, operar, respaldar y actualizar | [Operación y pruebas](docs/OPERACION.md) |
 | Configurar reglas complementarias privadas | [Reglas de detección](docs/REGLAS_DETECCION.md) |
+| Revisar la entrega y preparar futuras actualizaciones | [Versiones y actualización](docs/VERSIONES.md) |
 
 ## Arquitectura a primera vista
 

@@ -82,6 +82,8 @@ Configurar en Keycloak la misma URL HTTPS indicada por `OIDC_REDIRECT_URI`. La a
 
 ## 6. Promover y actualizar
 
+Consultar las [notas de la entrega y el procedimiento de actualización](../docs/VERSIONES.md), incluyendo la conservación de datos, secretos y perfiles opcionales.
+
 Validar el recorrido de carga, revisión, protección, aprobación y descarga en DEV; probar además Keycloak y buckets cuando se habiliten. Promover a PROD la misma imagen identificada, cambiando solo la configuración del ambiente.
 
 Antes de actualizar, respaldar PostgreSQL y `/data` de manera consistente. Para reducir tareas interrumpidas, dejar terminar los trabajos activos y suspender nuevas cargas durante la ventana de actualización. [Operación y recuperación](../docs/OPERACION.md).

@@ -33,6 +33,8 @@ Respaldar PostgreSQL y `/data` del mismo ambiente de forma consistente, suspendi
 
 ## Actualizaciones y recuperación
 
+La [guía de versiones y actualización](VERSIONES.md) registra los cambios de preparación de esta entrega y desarrolla el procedimiento para seleccionar una revisión, conservar la configuración, comparar resultados en DEV y promover la imagen validada.
+
 Usar una imagen identificada por versión o digest. Validar en DEV, respaldar PROD y programar una ventana de actualización. La estrategia `Recreate` del ejemplo detiene el pod anterior antes del nuevo.
 
 La ruta interactiva recupera documentos interrumpidos a partir del estado en PostgreSQL y los archivos persistentes. Los trabajos masivos se pueden reclamar nuevamente tras vencer su reserva; el integrador debe tolerar una escritura repetida del mismo destino. Las URLs que expiren durante la interrupción requieren una nueva solicitud con firmas válidas.

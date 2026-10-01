@@ -8,5 +8,6 @@ La documentación describe el código entregado y las responsabilidades de insta
 4. [Integraciones](INTEGRACIONES.md): contratos de API, buckets, Keycloak y roles.
 5. [Operación](OPERACION.md): validación, respaldos, monitoreo, actualización y pruebas.
 6. [Reglas de detección](REGLAS_DETECCION.md): perfiles privados y conservación de reglas específicas.
+7. [Versiones y actualización](VERSIONES.md): preparación de la entrega del 01-10-2026, validación registrada y procedimiento para instalar futuras versiones.
 
 Los ejemplos usan dominios reservados y campos vacíos para credenciales. Se deben completar con los valores administrados por SUBTEL. La [referencia de archivos](ARQUITECTURA.md#componentes-y-código) permite relacionar cada componente con su implementación.
