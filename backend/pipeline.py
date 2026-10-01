@@ -709,8 +709,14 @@ def _extend_wrapped_names(page: dict, findings: list[dict]) -> None:
             # No saltar a la línea siguiente si la oración ya continúa a la
             # derecha del nombre: un sustantivo alineado debajo no es apellido.
             if any(engine._same_text_line(last_word, word)
-                   and 0 <= word[1] - last_word[3] <= height * 4
-                   and list(word[1:]) not in boxes for word in words):
+                   and 0 <= word[1] - last_word[3] <= height * 2
+                   and list(word[1:]) not in boxes
+                   and (_norm_soft(word[0]) in engine.NAME_PROSE_BOUNDARIES
+                        or (word[0].islower()
+                            and _norm_soft(word[0]) not in _NAME_CONNECTORS
+                            and _norm_soft(word[0]) not in engine.FIRST_NAMES
+                            and _norm_soft(word[0]) not in engine.CHILEAN_SURNAMES))
+                   for word in words):
                 continue
             # A surname at the start of a wrapped list may lie far to the left
             # of the first name. Require both consecutive extraction order and

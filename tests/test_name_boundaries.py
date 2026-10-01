@@ -77,3 +77,23 @@ def test_cargo_de_concejala_no_se_agrega_como_apellido_envuelto():
     findings=pipeline._detect_page_text_findings(page,words,['NOMBRE'])
     assert [f['text'] for f in findings]==['Clara Soto Rojas']
     assert findings[0]['boxes']==[w[1:] for w in words[:3]]
+
+
+@pytest.mark.parametrize('words,expected', [
+    ([['Juan',155,702,310,758],['Ignacio',322,702,542,758],
+      ['Pérez',133,779,299,835],['Soto',311,779,564,835],
+      ['de',754,700,799,734],['historia',843,700,974,734]],
+     'Juan Ignacio\nPérez Soto'),
+    ([['MARIA',393,663,493,695],['PEREZ',465,663,550,695],
+      ['GOMEZ',351,699,530,731],['12',566,663,583,695],
+      ['345',583,663,634,695],['678-5',623,663,701,695]],
+     'MARIA PEREZ\nGOMEZ'),
+])
+def test_apellido_envuelto_se_conserva_con_texto_o_rut_en_columna_vecina(words,expected):
+    # El encabezado lateral es mayor que el cuerpo de texto del documento.
+    words=words+[['texto',800,1000+i*40,850,1034+i*40] for i in range(5)]
+    page={'n':1,'width':1700,'height':2200,'words':words}
+    finding=pipeline._finding('NOMBRE',' '.join(w[0] for w in words[:2]),
+                              page=1,boxes=[w[1:] for w in words[:2]],score=0.7)
+    pipeline._extend_wrapped_names(page,[finding])
+    assert finding['text']==expected
